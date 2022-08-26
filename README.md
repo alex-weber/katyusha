@@ -2,4 +2,19 @@
 
 Built with Node && Discord.js
 
-Just for the case that the officials from KARDS want to see the source code.
+Required environment variables:
+
+DATABASE_URL
+
+DISCORD_TOKEN
+
+Optional environment variables:
+
+PORT (webserver port)
+
+LIMIT (attachments limit, maximum 10)
+
+Set a different prefix for a server with:
+
+PREFIX_[ServerID]
+

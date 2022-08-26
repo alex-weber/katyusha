@@ -1,4 +1,7 @@
-module.exports.translate = function (language, msg) {
+const { languages } = require('./language.js')
+
+function translate (language, msg)
+{
 
     const reservedWords = {
         'germany':'германия',
@@ -45,7 +48,7 @@ module.exports.translate = function (language, msg) {
                     '**!!** - *Количество игроков онлайн и статистика*\n\n' +
                     '**!leo** - *Найдет Леопольда*\n' +
                     '**!сша пехота 3к блиц** - *Найдет карты с соответствующими параметрами*\n' +
-                    '**!en** [de|es|ft|it|pl|pt|ru|zh] - *Сменить язык поиска*'
+                    '**!en** [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - *Сменить язык поиска*'
             }
 
             break
@@ -63,7 +66,8 @@ module.exports.translate = function (language, msg) {
                     '**!!** - *Steam Spieler online and Statistiken*\n\n' +
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
-                    '**!de** [en|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
+                    'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
+                    '**!de** [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern'
             }
 
             break
@@ -78,12 +82,21 @@ module.exports.translate = function (language, msg) {
             if (msg === 'langChange') return 'Search language: '
             if (msg === 'help') {
                 return 'Welcome!\n\n'+
-                    '**!!** - *Steam players online and stats*\n\n' +
-                    '**!leo** - *will find the Leopold*\n' +
-                    '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
-                    '**!en** [de|es|ft|it|pl|pt|ru|zh] - change the search language'
-            }
+                '**!!** - *Steam players online and stats*\n\n' +
+                '**!leo** - *will find the Leopold*\n' +
+                '**!usa infantry blitz 3k 2c smoke 5/5** - *find cards with all the attributes*\n' +
+                'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
+                'Advanced search requires at least 2 parameters. Every word should contain at least 3 chars.\n\n' +
+                '**!td [infantry | tank | artillery | fighter | bomber]**\n' +
+                '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
+                '**!ranking** - Top Deck Ranking\n' +
+                '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
+                '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
+                'Uptime stats: https://stats.uptimerobot.com/kBwWphkNQx\n' +
+                'The hosting costs 7$ a month.\n' + 'If you want to support me: https://www.paypal.me/kropotor'
 
+            }
+            //translate meta keywords from rus to eng
             for (const [key, value] of Object.entries(reservedWords)) {
                 if (msg.slice(0,3) === value.slice(0,3)) {
 
@@ -94,3 +107,5 @@ module.exports.translate = function (language, msg) {
             return msg
     }
 }
+
+module.exports = { translate }

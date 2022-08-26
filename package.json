@@ -1,27 +1,31 @@
 {
-  "name": "new-katyusha",
-  "version": "1.0.0",
+  "name": "katyusha-kards-bot",
+  "version": "2.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "keywords": [],
+  "keywords": ["KARDS", "bot", "discord.js"],
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
-    "@keyv/postgres": "^1.2.1",
+    "@napi-rs/canvas": "^0.1.28",
+    "@prisma/client": "latest",
     "axios": "^0.26.0",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
-    "jsoning": "^0.13.23",
-    "keyv": "^4.2.6",
-    "pg": "^8.7.3"
+    "pg": "^8.7.3",
+    "prisma": "latest",
+    "random-image-api": "^0.0.4-beta"
   },
   "engines": {
     "npm": "^8.0.0",
     "node": "^16.0.0"
+  },
+  "devDependencies": {
+    "prisma": "latest"
   }
 }

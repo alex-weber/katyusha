@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  discordId String    @unique
+  name      String?
+  language  String
+  status    String
+  messages  Message[]
+  role      String?
+  mode      String?
+  tdGames   Int?
+  tdWins    Int?
+  tdLoses   Int?
+  tdDraws   Int?
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  content   String?
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+
+model Synonym {
+  id       Int    @id @default(autoincrement())
+  key      String @unique
+  value    String
+}
+
+model Card {
+  id             Int           @id @default(autoincrement())
+  cardId         String        @unique
+  importId       String
+  imageURL       String
+  goldenImageURL String?
+  thumbURL       String
+  set            String
+  title          String
+  text           String?
+  type           String
+  attack         Int?
+  defense        Int?
+  kredits        Int
+  operationCost  Int?
+  rarity         String
+  faction        String
+  version        String?
+  attributes     String?
+}
+
+model Topdeck {
+  id        Int      @id @default(autoincrement())
+  channelID String
+  startTime DateTime @default(now())
+  state     String
+  player1   String
+  player2   String?
+  winner    String?
+  loser     String?
+  log       String?
+  kredits   Int?
+  unitType  String?
+}
