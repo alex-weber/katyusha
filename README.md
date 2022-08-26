@@ -12,7 +12,7 @@ Optional environment variables:
 
 PORT (nodejs port)
 
-LIMIT (attachments limit, maximum 10)
+LIMIT (Discord API attachments limit, maximum 10)
 
 Set a different prefix for a server with:
 
