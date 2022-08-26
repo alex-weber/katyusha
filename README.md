@@ -10,7 +10,7 @@ DISCORD_TOKEN
 
 Optional environment variables:
 
-PORT (webserver port)
+PORT (nodejs port)
 
 LIMIT (attachments limit, maximum 10)
 
