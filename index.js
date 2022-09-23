@@ -3,10 +3,10 @@ const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
-//custom modules
-const translator = require('./translator.js')
-const stats = require('./stats')
-const search = require('./search')
+//modules
+const { translate } = require('./translator.js')
+const { getStats } = require('./stats')
+const { getCards, getFiles } = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
@@ -39,7 +39,7 @@ const client = new Client(
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
-    client.user.setActivity('KARDS(' + client.guilds.cache.size + ') servers')
+    client.user.setActivity('on duty for ' + client.guilds.cache.size + ' servers')
 })
 //main block
 try
@@ -51,25 +51,22 @@ try
         let serverPrefix = process.env['PREFIX_'+message.guildId]
         if (serverPrefix !== undefined) {
             prefix = serverPrefix
-            console.log('prefix is set to ->', prefix)
+            console.log('prefix is set to', prefix, 'for', message.guild.name)
         }
         //not a bot command or bot
-        if (!message.content.startsWith(prefix) || message.author.bot) {
-
-            return
-        }
+        if (!message.content.startsWith(prefix) || message.author.bot) return
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
-        if (!permissions.has(Permissions.FLAGS.ATTACH_FILES) || !permissions.has(Permissions.FLAGS.SEND_MESSAGES))
+        if (!permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
+            !permissions.has(Permissions.FLAGS.ATTACH_FILES))
         {
             console.log('no write permissions.')
 
             return
         }
-
         //it's a bot command
-        console.log('bot command:', message.author.username, '->', message.content)
+        console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
@@ -82,7 +79,7 @@ try
         //handle command
         if (command === 'help')
         {
-            await message.reply(translator.translate(language, 'help'))
+            await message.reply(translate(language, 'help'))
 
             return
         }
@@ -106,7 +103,7 @@ try
           message.content === prefix+'ingame' ||
           message.content === prefix+'online')
         {
-            stats.getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })
+            getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })
 
             return
         }
@@ -123,7 +120,7 @@ try
         }
         //top deck game only in special channels
         if (
-          message.content.startsWith(prefix+'td') &&
+          command.startsWith('td') &&
           ( message.channel.name.search('bot') !== -1 ||
             dictionary.botwar.channels.includes( message.channelId.toString() )
           )
@@ -133,9 +130,9 @@ try
             //let channel = client.channels.fetch(message.channelId)
             let td = await topDeck(message.channelId, user, command)
             if (td.state === 'open') {
-                let unitType = 'Unit type: '
-                if (td.unitType) unitType += td.unitType
-                await message.reply('**' +unitType.toUpperCase()+ '**\nWaiting for another player...')
+                let unitType = ''
+                if (td.unitType) unitType = td.unitType + ' battle\n'
+                await message.reply( unitType.toUpperCase() + 'Waiting for another player...')
 
                 return
             }
@@ -162,7 +159,7 @@ try
             user.language = language
             await updateUser(user)
             message.reply(
-                translator.translate(language, 'langChange') + language.toUpperCase()
+                translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
                 console.log('lang changed to', language.toUpperCase(), 'for', message.author.username)
             })
@@ -175,7 +172,6 @@ try
 
             return
         }
-        //search on KARDS website
         //check for synonyms
         let syn = await getSynonym(command)
         if (syn) {
@@ -197,10 +193,10 @@ try
             'q': command,
             'showSpawnables': true,
         }
-        const searchResult = await search.getCards(variables)
-
+        //search on KARDS website
+        const searchResult = await getCards(variables)
         if (!searchResult) {
-            await message.reply(translator.translate(language, 'error'))
+            await message.reply(translate(language, 'error'))
 
             return
         }
@@ -209,27 +205,32 @@ try
         {
             //get a random cat image for no result
             const catImage = await randomImageService.nekos('meow')
-            await message.reply(
-              {content: translator.translate(language, 'noresult'),
-                  files: [catImage.toString()]
-              })
+            try {
+                await message.reply(
+                  {content: translate(language, 'noresult'),
+                      files: [catImage.toString()]
+                  })
+            } catch (e) {
+                console.log(e)
+            }
 
             return
         }
         //if any cards are found - attach them
-        let content = translator.translate(language, 'search') + ': ' + counter
+        let content = translate(language, 'search') + ': ' + counter
         //warn that there are more cards found
         if (counter > limit) {
-            content += translator.translate(language, 'limit') + limit
+            content += translate(language, 'limit') + limit
         }
         //attach found images
-        const files = search.getFiles(searchResult, language)
+        const files = getFiles(searchResult, language)
         //reply to user
-        await message.reply({content: content, files: files})
+        await message.reply({ content: content, files: files })
         console.log(counter + ' card(s) found', files)
 
     }) // end of onMessageCreate
-    //start bot session
+
+    //start bot's session
     client.login(process.env.DISCORD_TOKEN).then( () => { console.log('client started') })
 //end of global try
 } catch (error) { console.log(error) }

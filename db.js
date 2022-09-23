@@ -23,7 +23,6 @@ async function createUser(data)
  */
 async function getUser(discordId)
 {
-
   let User = await prisma.user.findUnique({
     where: {
       discordId: discordId,
@@ -31,12 +30,15 @@ async function getUser(discordId)
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
-
   if (!User) {
     User = await createUser({
       discordId: discordId,
       language: 'en',
       status: 'active',
+      tdGames: 0,
+      tdWins: 0,
+      tdDraws: 0,
+      tdLoses: 0,
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
@@ -86,11 +88,32 @@ async function getSynonym(key)
  */
 async function createSynonym(key, value)
 {
+  if (typeof key !== 'string' || typeof value !== 'string') return
 
   return await prisma.synonym.create({
     data: {
-      key: key.toString(),
-      value: value.toString(),
+      key: key,
+      value: value,
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
+ * @param key
+ * @param value
+ * @returns {Promise<*>}
+ */
+async function updateSynonym(key, value)
+{
+  if (typeof value !== 'string') return
+
+  return await prisma.synonym.update({
+    where: { key: key },
+    data: {
+      value: value,
     },
   }).
   catch((e) => { throw e }).
@@ -189,6 +212,7 @@ async function getCardsDB(data)
  */
 async function getOpenTopDeck(channelID)
 {
+
   return await prisma.topdeck.findFirst({
     where: {
       state: 'open',
@@ -251,10 +275,9 @@ async function getRandomCard(td)
     type: { in: types },
     attack: {
       gt: 0,
-    }
+    },
+    kredits: td.kredits
   }
-  if (td.kredits !== null && td.kredits > -1) data['kredits'] = parameters.kredits
-
   let cards = await prisma.card.findMany({
     where: data
   }).
@@ -313,6 +336,7 @@ module.exports = {
   getTopDeckStats,
   getSynonym,
   createSynonym,
+  updateSynonym,
   createCard,
   getCardsDB,
   getRandomCard,
