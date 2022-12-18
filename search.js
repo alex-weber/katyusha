@@ -35,11 +35,32 @@ function getVariables(variables)
         switch (word)
         {
             case 'us':
+            case 'america':
+            case 'american':
                 word = 'usa'
                 break
             case 'french':
                 word = 'france'
                 break
+            case 'russian':
+            case 'ussr':
+                word = 'soviet'
+                break
+            case 'uk':
+                word = 'britain'
+                break
+            case 'plane':
+                variables.type = { in: ['bomber', 'fighter'] }
+
+                return variables
+            case 'unit':
+                variables.type = { notIn: ['order', 'countermeasure'] }
+
+                return variables
+            case 'pin':
+                variables.text = 'pin'
+
+                return variables
         }
         let faction = getAttribute(word, dictionary.faction)
         if (faction)
@@ -66,6 +87,13 @@ function getVariables(variables)
         if (attribute)
         {
             variables.attributes = attribute
+
+            return variables
+        }
+        let exile = getAttribute(word, ['exile'])
+        if (exile)
+        {
+            variables.exile = {not: ''}
 
             return variables
         }
@@ -97,7 +125,12 @@ function getVariables(variables)
             let both = matches.split(delimiter)
             variables.attack = parseInt(both[0])
             variables.defense = parseInt(both[1])
+
+            return variables
         }
+        //so if there is no parameter found - add the word to the search string
+        if (variables.text === undefined) variables.text = ''
+        variables.text += word + ' '
 
         return variables
     }
@@ -151,6 +184,8 @@ async function getCards(variables)
     ).catch(error =>
     {
         console.log('request to kards.com failed ', error.errno, error.data)
+
+        return false
     })
 
     if (response)
@@ -203,6 +238,12 @@ function getFiles(cards, language)
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
+    if (Object.keys(variables).length === 0)
+    {
+        console.log('no variables set')
+
+        return {counter: 0, cards: []}
+    }
     //delete non DB fields
     delete variables.q
     delete variables.language
@@ -213,12 +254,26 @@ async function advancedSearch(variables)
             contains: variables.attributes,
         }
     }
-    if (Object.keys(variables).length === 0)
+    let text = ''
+    if (variables.hasOwnProperty('text'))
     {
-        console.log('no variables set')
-
-        return {counter: 0, cards: []}
+        text = variables.text.trim()
     }
+    variables.OR = [
+        {
+            title: {
+                contains: text,
+                mode: 'insensitive',
+            },
+        },
+        {
+            text: {
+                contains: text,
+                mode: 'insensitive',
+            },
+        },
+    ]
+    delete variables.text
     console.log(variables)
     let cards = await getCardsDB(variables)
 
@@ -233,7 +288,7 @@ async function advancedSearch(variables)
  */
 async function handleSynonym(user, command)
 {
-    if (user.role !== 'GOD' && user.role !== 'VIP') return null
+    if (!isManager(user)) return null
     const data = command.split('=')
     if (data.length < 2) return null
     console.log(data)
@@ -252,4 +307,14 @@ async function handleSynonym(user, command)
     else return await updateSynonym(key, value)
 }
 
-module.exports = {getCards, getFiles, handleSynonym}
+/**
+ *
+ * @param user
+ * @returns {boolean}
+ */
+function isManager(user)
+{
+    return (user.role === 'GOD' || user.role === 'VIP')
+}
+
+module.exports = {getCards, getFiles, handleSynonym, isManager}

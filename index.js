@@ -6,7 +6,7 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 //modules
 const {translate} = require('./translator.js')
 const {getStats} = require('./stats')
-const {getCards, getFiles} = require('./search')
+const {getCards, getFiles, handleSynonym} = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
@@ -23,7 +23,6 @@ app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
-const {handleSynonym} = require('./search')
 const {drawBattlefield} = require('./canvasManager')
 const client = new Client(
     {
@@ -47,25 +46,25 @@ try
         let prefix = defaultPrefix
         //check for a different prefix
         let serverPrefix = process.env['PREFIX_' + message.guildId]
-        if (serverPrefix !== undefined)
-        {
-            prefix = serverPrefix
-            console.log('prefix is set to', prefix, 'for', message.guild.name)
-        }
+        if (serverPrefix !== undefined) prefix = serverPrefix
+
         //not a bot command or bot
         if (!message.content.startsWith(prefix) || message.author.bot) return
+
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
-        if (!permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
+        if (!permissions || !permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
             !permissions.has(Permissions.FLAGS.ATTACH_FILES))
         {
             console.log('no write permissions.')
 
             return
         }
+
         //it's a bot command
         console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
+
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
@@ -75,12 +74,16 @@ try
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
+
         //handle command
         if (command === 'help') return await message.reply(translate(language, 'help'))
+
         //get top 9 TD ranking
         if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())
+
         //user's TD ranking
         if (command === 'myrank') return await message.reply(myTDRank(user))
+
         //show online stats
         if (message.content === prefix + prefix ||
             message.content === prefix + 'ingame' ||
@@ -96,18 +99,7 @@ try
 
             return
         }
-        //handle synonyms
-        if (command.startsWith('+'))
-        {
-            let syn = await handleSynonym(user, command)
-            if (syn)
-            {
-                await message.reply(syn.key + ' created')
-                console.log('created synonym:', syn.key)
-            }
 
-            return
-        }
         //top deck game only in special channels
         if (
             command.startsWith('td') &&
@@ -131,18 +123,24 @@ try
             {
                 //draw the image
                 await message.reply('getting battle results...')
-                const battleImage = await drawBattlefield(td)
-                await message.reply({content: td.log, files: [battleImage]})
-                console.log(td.log)
-                //delete the battle image
-                fs.rm(battleImage, function ()
-                {
-                    console.log('image deleted')
-                })
+                try {
+                    const battleImage = await drawBattlefield(td)
+                    await message.reply({content: td.log, files: [battleImage]})
+                    console.log(td.log)
+                    //delete the battle image
+                    fs.rm(battleImage, function ()
+                    {
+                        console.log('image deleted')
+                    })
+                } catch (e) {
+                    await message.reply('could not draw battle image\n' + td.log)
+                    console.error(e.toString())
+                }
             }
 
             return
         }
+
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0, 2)))
         {
@@ -164,6 +162,20 @@ try
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
+
+        //handle synonyms
+        if (command.startsWith('^'))
+        {
+            let syn = await handleSynonym(user, command)
+            if (syn)
+            {
+                await message.reply(syn.key + ' created')
+                console.log('created synonym:', syn.key)
+            }
+
+            return
+        }
+
         //check for synonyms
         let syn = await getSynonym(command)
         if (syn)
@@ -180,12 +192,13 @@ try
             command = dictionary.synonyms[command]
             console.log('synonym found for ' + command)
         }
+
+        //first search on KARDS.com, on no result search in the local DB
         let variables = {
             'language': language,
             'q': command,
             'showSpawnables': true,
         }
-        //search on KARDS website
         const searchResult = await getCards(variables)
         if (!searchResult)
         {
@@ -194,17 +207,24 @@ try
         const counter = searchResult.counter
         if (!counter)
         {
-            //get a random cat image for no result
-            const catImage = await randomImageService.nekos('meow')
             try
             {
+                //get a random cat/dog/hug image for no result
+                let endpoints = ['meow', 'woof']
+                //define the sample function to get a random array value
+                Array.prototype.sample = function()
+                {
+                    return this[Math.floor(Math.random()*this.length)]
+                }
+                const image = await randomImageService.nekos(endpoints.sample())
                 await message.reply(
                     {
                         content: translate(language, 'noresult'),
-                        files: [catImage.toString()]
+                        files: [image.toString()]
                     })
             } catch (e)
             {
+                await message.reply(translate(language, 'noresult'))
                 console.log(e)
             }
 
