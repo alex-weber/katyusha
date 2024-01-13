@@ -64,6 +64,21 @@ async function updateUser(User)
 }
 
 /**
+ * @returns {Promise<*>}
+ */
+async function getAllSynonyms()
+{
+
+  return await prisma.synonym.findMany({
+    orderBy: {
+      key: 'asc'
+    }
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
  *
  * @param key
  * @returns {Promise<*>}
@@ -122,6 +137,21 @@ async function updateSynonym(key, value)
 
 /**
  *
+ * @param key
+ * @returns {Promise<*>}
+ */
+async function deleteSynonym(key)
+{
+
+  return await prisma.synonym.delete({
+    where: { key: key }
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
  * @param card
  * @returns {Promise<*>}
  */
@@ -135,7 +165,11 @@ async function createCard(card)
   }
   if (!card.json.hasOwnProperty('attributes')) card.json.attributes = ''
   let text = ''
-  if (card.json.hasOwnProperty('text')) text = card.json.text['en-EN']
+  if (card.json.hasOwnProperty('text') && card.json.text.hasOwnProperty('en-EN'))
+  {
+    //console.log(card.json.text)
+    text = card.json.text['en-EN'].toLowerCase() + '%%' + card.json.text['ru-RU'].toLowerCase()
+  }
   let exile = ''
   if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
@@ -144,7 +178,7 @@ async function createCard(card)
         importId:       card.importId,
         imageURL:       card.imageUrl,
         thumbURL:       card.thumbUrl,
-        title:          card.json.title['en-EN'].toLowerCase(),
+        title:          card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
         text:           text,
         set:            card.json.set.toLowerCase(),
         type:           card.json.type.toLowerCase(),
@@ -154,8 +188,9 @@ async function createCard(card)
         operationCost:  card.json.operationCost,
         rarity:         card.json.rarity.toLowerCase(),
         faction:        card.json.faction.toLowerCase(),
-        attributes:     card.json.attributes.toString(),
+        attributes:     card.json.attributes.toString().toLowerCase(),
         exile:          exile.toLowerCase(),
+        reserved:       card.reserved,
   }
 
   if (await cardExists(card))
@@ -294,7 +329,7 @@ async function getRandomCard(td)
 
 /**
  *
- * @returns String
+ * @returns Promise
  */
 async function getTopDeckStats()
 {
@@ -322,7 +357,7 @@ async function getTopDeckStats()
   let counter = 1
   ranking.forEach((user) => {
     if (counter > 9) return
-    answer += counter +': ' + user.name + ' ('+ user.score +')\n'
+    answer += counter +'. ' + user.name + ' ('+ user.score +')\n'
     counter++
   })
 
@@ -337,9 +372,11 @@ module.exports = {
   updateTopDeck,
   getOpenTopDeck,
   getTopDeckStats,
+  getAllSynonyms,
   getSynonym,
   createSynonym,
   updateSynonym,
+  deleteSynonym,
   createCard,
   getCardsDB,
   getRandomCard,

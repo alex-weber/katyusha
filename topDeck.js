@@ -65,29 +65,44 @@ async function topDeck(channelID, user, command = null)
 
 /**
  *
+ * @param card
+ * @returns String
+ */
+function getTitle(card)
+{
+    let titles = card.title.split('%%')
+
+    return titles[0]
+}
+
+/**
+ *
  * @param td
  * @returns {Promise<boolean>}
  */
 async function battle(td)
 {
-    td.log = ''
+    td.log = '```' //format the log as code to avoid auto-formatting changing numbers
     let kredits = Math.floor(Math.random() * 7) + 1
     if (kredits > 7) kredits = 7
     td.kredits = kredits
     td.card1 = await getRandomCard(td)
     td.card2 = await getRandomCard(td)
+    //split languages to get the titles only in English
+    td.card1.title = getTitle(td.card1)
+    td.card2.title = getTitle(td.card2)
     let user1 = await getUser(td.player1)
     let user2 = await getUser(td.player2)
     td.card1.owner = user1
     td.card2.owner = user2
     let attacker = td.card1
     let defender = td.card2
-    //the card with blitz attacks first.
-    if ((td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1))
+    //randomize the attacker
+    if (Math.floor(Math.random() * 2) + 1 === 2)
     {
         attacker = td.card2
         defender = td.card1
-        td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first\n'
+        td.log += attacker.title.toUpperCase() + ' attacks first\n'
     }
     //the battle begins
     let winner
@@ -102,10 +117,10 @@ async function battle(td)
         let attack = attacker.attack
         let defAttack = defender.attack
         //check for heavy armor
-        if (attacker.attributes.search('heavyArmor1') !== -1) defAttack--
-        if (attacker.attributes.search('heavyArmor2') !== -1) defAttack = defAttack - 2
-        if (defender.attributes.search('heavyArmor1') !== -1) attack--
-        if (defender.attributes.search('heavyArmor2') !== -1) attack = attack - 2
+        if (attacker.attributes.search('heavyarmor1') !== -1) defAttack--
+        if (attacker.attributes.search('heavyarmor2') !== -1) defAttack = defAttack - 2
+        if (defender.attributes.search('heavyarmor1') !== -1) attack--
+        if (defender.attributes.search('heavyarmor2') !== -1) attack = attack - 2
         if (attack < 0) attack = 0
         //reverse damage
         if ((attacker.type === 'bomber' && defender.type === 'fighter') ||
@@ -171,6 +186,7 @@ async function battle(td)
         await updateUser(user2)
         td.log += 'draw'
     }
+    td.log += '```' //add code block end
     await updateTopDeck(td)
 
     return td

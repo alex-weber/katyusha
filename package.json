@@ -1,31 +1,39 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "2.0.1",
-  "description": "",
+  "version": "2.5.0",
+  "description": "cards search and more",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "test": "jest",
+    "start": "node index.js",
+    "heroku-postbuild": "npx prisma generate"
   },
-  "keywords": ["KARDS", "bot", "discord.js"],
+  "keywords": [
+    "KARDS",
+    "bot",
+    "discord.js"
+  ],
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
-    "@prisma/client": "latest",
-    "axios": "^0.26.0",
+    "@prisma/client": "^5.6.0",
+    "axios": "^1.6.2",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
-    "pg": "^8.7.3",
-    "prisma": "latest",
-    "random-image-api": "^0.0.4-beta"
+    "jsoning": "^0.13.23",
+    "node": "^21.2.0",
+    "npm": "^10.2.4",
+    "pg": "^8.11.3",
+    "prisma": "^5.6.0",
+    "telegraf": "^4.12.2"
   },
   "engines": {
-    "npm": "^8.0.0",
-    "node": "^16.0.0"
+    "npm": "^10.2.4",
+    "node": "^21.2.0"
   },
   "devDependencies": {
-    "prisma": "latest"
+    "jest": "^29.7.0"
   }
 }

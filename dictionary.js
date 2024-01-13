@@ -1,18 +1,5 @@
 module.exports = {
 
-    nation: {
-        soviet: 1,
-        russian: 1,
-        usa: 2,
-        japan: 3,
-        germany: 4,
-        britain: 5,
-        france: 6,
-        french: 6,
-        italy: 7,
-        poland: 8,
-
-    },
     faction: [
         'soviet',
         'usa',
@@ -22,6 +9,7 @@ module.exports = {
         'france',
         'italy',
         'poland',
+        'finland',
     ],
     type: [
         'infantry',
@@ -49,6 +37,8 @@ module.exports = {
         'pincer',
         'heavy',
         'fury',
+        'veteran',
+        'salvage',
     ],
     synonyms: {
 
@@ -64,13 +54,8 @@ module.exports = {
         beefwagon: 'befehlswagen',
         senpai: 'sendai regiment',
         slow: 'fast heinz',
-        gay: 'liberation',
         baby: 'autokanone',
-        bussymark: 'bismarck',
         elephant: '114',
-        cunt: 'kents',
-        shit: 'shibata',
-        thomas: 'long tom',
         cas: 'close air support',
         uws: 'united we stand',
         wcd: 'we can do it',
